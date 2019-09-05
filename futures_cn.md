@@ -44,7 +44,7 @@ search: true
 * 对参数的顺序不做要求。
 
 ## 访问限制
-* 在 `/fapi/v1/exchangeInfo`接口中`rateLimits`数组里包含有REST接口(不限于本篇的REST接口)的访问限制。包括带权重的访问频次限制、下单速率限制。本篇`枚举定义`章节有限制类型的进一步说明。
+* 在 `/fapi/v1/exchangeInfo`接口中`rateLimits`数组里包含有REST接口(不限于本篇的REST接口)的访问限制。包括带权重的访问频次限制、下单速率限制。本篇`枚举定义` (#api)章节有限制类型的进一步说明。
 * 违反上述任何一个访问限制都会收到HTTP 429，这是一个警告.
 * 每一个接口均有一个相应的权重(weight)，有的接口根据参数不同可能拥有不同的权重。越消耗资源的接口权重就会越大。
 * 当收到429告警时，调用者应当降低访问频率或者停止访问。
@@ -74,8 +74,8 @@ MARKET_DATA | 需要有效的API-KEY
 
 ### 时间同步安全
 * 签名接口均需要传递`timestamp`参数, 其值应当是请求发送时刻的unix时间戳（毫秒）
-* 服务器收到请求时会判断请求中的时间戳，如果是5000毫秒之前发出的，则请求会被认为无效。这个时间窗口值可以通过发送可选参数`recvWindow`来自定义。
-* 另外，如果服务器计算得出客户端时间戳在服务器时间的‘未来’一秒以上，也会拒绝请求。
+* 服务器收到请求时会判断请求中的时间戳，如果未注明时间窗口值，则为默认的5000毫秒。在默认情况下，如果请求中的时间戳晚于服务器时间超过5000毫秒，该请求则会被判定为无效。时间窗口值可以通过发送可选参数`recvWindow`来自定义，最大值为60000毫秒，系统判断逻辑相同。
+* 另外，如果服务器计算得出客户端时间戳早于服务器时间一秒或以上，请求也会被服务器拒绝。
 
 > 逻辑伪代码：
   
@@ -88,8 +88,8 @@ MARKET_DATA | 需要有效的API-KEY
   ```
 
 **关于交易时效性** 
-互联网状况并不100%可靠，不可完全依赖,因此你的程序本地到币安服务器的时延会有抖动.
-这是我们设置`recvWindow`的目的所在，如果你从事高频交易，对交易时效性有较高的要求，可以灵活设置recvWindow以达到你的要求。
+互联网状况并不100%可靠，不可完全依赖，因此你的程序本地到币安服务器的时延会有抖动.
+这是我们设置`recvWindow`的目的所在，如果你可以灵活设置recvWindow以满足您的交易策略。
 **不推荐使用5秒以上的recvWindow**
 
 
@@ -290,6 +290,7 @@ m -> 分钟; h -> 小时; d -> 天; w -> 周; M -> 月
 
 **限制间隔**
 * MINUTE
+* SECOND
 
 
 
@@ -381,7 +382,7 @@ GET /fapi/v1/ping
 > **响应:**
 
 ```javascript
-pong
+{}
 ```
 
 测试能否联通
@@ -530,7 +531,7 @@ GET /fapi/v1/depth
 
 **权重:**
 
-Limit | Weight
+Limit参数值 | 权重
 ------------ | ------------
 5, 10, 20, 50, 100 | 1
 500 | 5
@@ -566,17 +567,17 @@ GET /fapi/v1/trades
 ]
 ```
 
-获取近期成交
+获取市场近期成交
 
 **权重:**
 1
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | YES |
-limit | INT | NO | Default 500; max 1000.
+limit | INT | NO | 默认 500; 最大 1000.
 
 
 ## 查询历史成交(MARKET_DATA)
@@ -605,10 +606,10 @@ GET /fapi/v1/historicalTrades
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | YES |
-limit | INT | NO | Default 500; max 1000.
+limit | INT | NO | 默认 500; 最大 1000.
 fromId | LONG | NO | 从哪一条成交id开始返回. 缺省返回最近的成交记录
 
 * 需要提交 `X-MBX-APIY` 
@@ -635,14 +636,14 @@ GET /fapi/v1/aggTrades
 ]
 ```
 
-归集交易与逐笔交易的区别在于，同一价格、同一方向、同一时间（按秒计算）的trade会被聚合为一条
+归集交易与逐笔交易的区别在于，同一价格、同一方向、同一时间（按秒计算）的市场成交单会被聚合为一条
 
 **权重:**
 1
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | YES |
 fromId | LONG | NO | 从包含fromID的成交开始返回结果
@@ -688,7 +689,7 @@ GET /fapi/v1/klines
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | YES |
 interval | ENUM | YES |
@@ -724,7 +725,7 @@ GET /fapi/v1/premiumIndex
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | YES |
 
@@ -790,7 +791,7 @@ GET /fapi/v1/ticker/24hr
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | NO |
 
@@ -832,7 +833,7 @@ GET /fapi/v1/ticker/price
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | NO |
 
@@ -879,7 +880,7 @@ GET /fapi/v1/ticker/bookTicker
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | NO |
 
@@ -1138,7 +1139,7 @@ POST /fapi/v1/order  (HMAC SHA256)
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | YES |
 side | ENUM | YES |
@@ -1222,7 +1223,7 @@ GET /fapi/v1/order (HMAC SHA256)
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | YES |
 orderId | LONG | NO |
@@ -1265,7 +1266,7 @@ DELETE /fapi/v1/order  (HMAC SHA256)
 
 **Parameters:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | YES |
 orderId | LONG | NO |
@@ -1315,7 +1316,7 @@ GET /fapi/v1/openOrders  (HMAC SHA256)
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | YES |
 recvWindow | LONG | NO |
@@ -1357,7 +1358,7 @@ GET /fapi/v1/allOrders (HMAC SHA256)
 
 **Parameters:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | YES |
 orderId | LONG | NO | 只返回此orderID之后的订单，缺省返回最近的订单
@@ -1406,7 +1407,7 @@ GET /fapi/v1/account (HMAC SHA256)
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 recvWindow | LONG | NO |
 timestamp | LONG | YES |
@@ -1468,7 +1469,7 @@ GET /fapi/v1/userTrades  (HMAC SHA256)
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 symbol | STRING | YES |
 startTime | LONG | NO |
@@ -1514,7 +1515,7 @@ POST /api/v1/listenKey (HMAC SHA256)
 1
 
 **参数:**
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 recvWindow | LONG | NO |
 timestamp | LONG | YES |
@@ -1538,7 +1539,7 @@ PUT /api/v1/listenKey (HMAC SHA256)
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 recvWindow | LONG | NO |
 timestamp | LONG | YES |
@@ -1563,7 +1564,7 @@ DELETE /api/v1/listenKey (HMAC SHA256)
 
 **参数:**
 
-Name | Type | Mandatory | Description
+名称 | 类型 | 是否必须 | 描述
 ------------ | ------------ | ------------ | ------------
 recvWindow | LONG | NO |
 timestamp | LONG | YES |
@@ -1899,7 +1900,7 @@ This code is sent when an error has been returned by the matching engine.
 The following messages which will indicate the specific error:
 
 
-Error message | Description
+错误信息 | 描述
 ------------ | ------------
 "Unknown order sent." | The order (by either `orderId`, `clientOrderId`, `origClientOrderId`) could not be found
 "Duplicate order sent." | The `clientOrderId` is already in use
@@ -1918,7 +1919,7 @@ Error message | Description
 "Order would immediately match and take." | `LIMIT_MAKER` order type would immediately match and trade, and not be a pure maker order.
 
 ## -9xxx Filter failures
-Error message | Description
+错误信息 | 描述
 ------------ | ------------
 "Filter failure: PRICE_FILTER" | `price` is too high, too low, and/or not following the tick size rule for the symbol.
 "Filter failure: LOT_SIZE" | `quantity` is too high, too low, and/or not following the step size rule for the symbol.
